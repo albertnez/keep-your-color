@@ -87,7 +87,7 @@ void Game::update(float delta_time) {
   generate_walls();
   // Playing update
   if (status == PLAYING) { 
-    score += delta_time;
+    score += delta_time*100;
     target_speed += delta_time * 40.0f;
     gui->set_score(score);
 

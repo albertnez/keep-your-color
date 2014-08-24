@@ -20,6 +20,7 @@ private:
   int status;
   int index;
   int score;
+  int best_score;
   int timeout;
   sf::Font font;
   std::vector<sf::Text> text;

@@ -4,7 +4,11 @@
 
 Gui::Gui(Game & game) : game(game) {
   text.resize(Game::S_SIZE);
-  text[Game::MENU].setString("Press SPACE to start");
+  text[Game::MENU].setString("keep your color" 
+                             "\n\nStay in the zone that shares your color."
+                             "\nYou can change your color in a mixed color zone."
+                             "\nTo your change color, press SPACE."
+                             "\n\nPress SPACE to start");
   text[Game::READY].setString("Get ready...");
   text[Game::PLAYING].setString("Score: 0");
   text[Game::GAME_OVER].setString("Game Over.\nPress SPACE to start again");
@@ -15,7 +19,8 @@ Gui::~Gui() {}
 bool Gui::init() {
   status = Game::MENU;
   index = 0;
-  score = -1;
+  score = 0;
+  best_score = 0;
   timeout = 0;
   if (!font.loadFromFile("fonts/Audiowide-Regular.ttf")) {
     std::cerr << "Error loading font fonts/NovaMono.ttf" << std::endl;
@@ -24,6 +29,7 @@ bool Gui::init() {
   for (sf::Text & t : text) {
     t.setFont(font);
     t.setColor(sf::Color::Black);
+    t.setCharacterSize(24);
   }
   return true;
 }
@@ -60,5 +66,14 @@ void Gui::set_status(int status) {
   this->status = status;
   if (status == Game::PLAYING) set_score(0);
   if (status == Game::READY) set_timeout(3);
+  if (status == Game::GAME_OVER) {
+    best_score = std::max(score, best_score);
+    std::stringstream ss;
+    ss << "Game Over." <<
+          "\nScore: " << score << 
+          "\nBest score: " << best_score << 
+          "\nPress Space to start again";
+    text[Game::GAME_OVER].setString(ss.str());
+  }
 }
 
