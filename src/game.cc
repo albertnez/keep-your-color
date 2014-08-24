@@ -8,6 +8,14 @@ Game::Game(int width, int height, std::string title, int style)
   : window(sf::VideoMode(width, height), title, style) {
   window.setMouseCursorVisible(false);
   window.setVerticalSyncEnabled(true);
+
+  input = Input();
+  gui = new Gui(*this);
+
+  status = MENU;
+  time_to_start = 0;
+  score = 0;
+  game_over_speed = 200.0f;
 }
 
 Game::~Game() {
@@ -15,12 +23,11 @@ Game::~Game() {
 }
 
 bool Game::init() {
-  // Default color scheeme for actors
-  input = Input();
-  gui = new Gui(*this);
   if (!gui->init()) return false;
   num_types = 2;
-  speed = 500.0f;
+  start_speed = 300.0f;
+  target_speed = start_speed;
+  speed = start_speed;
   walls_width = 4.0f;
   walls_min_height = 85.0f;
   num_total_walls = 0;
@@ -29,8 +36,7 @@ bool Game::init() {
 
   Actor::colors = {sf::Color::Red, sf::Color::Blue}; 
 
-  player = (new Player(*this, 0, speed));
-  player->set_speed(500);
+  player = (new Player(*this, 0, 500.0f));
   // Create Walls test
   
   all_walls = std::vector<std::list<Wall*>>(num_types);
@@ -69,8 +75,11 @@ const Input & Game::get_input() {
 void Game::update(float delta_time) {
   // Common update
   input.update();
+  // Update speed to target
+  speed += (target_speed - speed)*delta_time;
   for (std::list<Wall*> & walls : all_walls) {
     for (Wall * wall : walls) {
+      wall->set_speed(speed);
       wall->update(delta_time);
     }
   }
@@ -79,12 +88,14 @@ void Game::update(float delta_time) {
   // Playing update
   if (status == PLAYING) { 
     score += delta_time;
+    target_speed += delta_time * 40.0f;
     gui->set_score(score);
 
     player->update(delta_time);
     if (!player_inside()) {
       status = GAME_OVER;
       gui->set_status(status);
+      target_speed = game_over_speed;
     } 
   }
   else if (status == MENU) {
@@ -97,11 +108,14 @@ void Game::update(float delta_time) {
   }
   else if (status == READY) {
     if (player->get_type() != 0) player->set_type(0);
+    target_speed = start_speed;
+    // Move player to initial position
     sf::Vector2f pos = player->get_pos();
     sf::Vector2f size = player->get_size();
     player->set_pos(sf::Vector2f(pos.x,
                                  pos.y + ((SCREEN_HEIGHT/2.0f-size.y/2.0) - pos.y)*delta_time*2));
 
+    // Adjust speed
     time_to_start -= delta_time;
     gui->set_timeout(time_to_start+1);
     if (time_to_start < 0.0f) {
