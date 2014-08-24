@@ -24,6 +24,8 @@ private:
   // Clear everything in game
   void clear();
   // Different kinds of generation
+  void generate_menu_walls();
+  void generate_ready_walls();
   void generate_walls();
   void erase_old_walls();
   // Check if player is inside a wall of its type
@@ -37,6 +39,7 @@ private:
   float speed;
   float target_speed;
   float game_over_speed;
+  float ready_speed;
   // Walls
   float walls_width;
   float walls_min_height;
@@ -49,6 +52,7 @@ private:
   int status;
   float time_to_start;
   float score;
+  float total_time;
 };
 
 #endif  // GAME_H

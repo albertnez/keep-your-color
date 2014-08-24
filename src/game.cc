@@ -12,10 +12,12 @@ Game::Game(int width, int height, std::string title, int style)
   input = Input();
   gui = new Gui(*this);
 
+  game_over_speed = 200.0f;
+  ready_speed = 1000.0f;
   status = MENU;
   time_to_start = 0;
   score = 0;
-  game_over_speed = 200.0f;
+  total_time = 0;
 }
 
 Game::~Game() {
@@ -40,6 +42,7 @@ bool Game::init() {
   // Create Walls test
   
   all_walls = std::vector<std::list<Wall*>>(num_types);
+  /*
   float pos_x = 0.0f;
   while (pos_x + walls_width < SCREEN_WIDTH) {
     all_walls[0].push_back(new Wall(*this, 0, speed, sf::Vector2f(pos_x, 0.0f),
@@ -48,6 +51,7 @@ bool Game::init() {
     ++num_total_walls;
     ++num_active_walls[0];
   }
+  */
   return true;
 }
 
@@ -77,18 +81,26 @@ void Game::update(float delta_time) {
   input.update();
   // Update speed to target
   speed += (target_speed - speed)*delta_time;
+
+  total_time += delta_time;
+
   for (std::list<Wall*> & walls : all_walls) {
     for (Wall * wall : walls) {
       wall->set_speed(speed);
       wall->update(delta_time);
     }
   }
+
+  // Walls
   erase_old_walls();
-  generate_walls();
+  if (status == MENU) generate_menu_walls();
+  else if (status == READY) generate_ready_walls();
+  else generate_walls();
+
   // Playing update
   if (status == PLAYING) { 
     score += delta_time*100;
-    target_speed += delta_time * 40.0f;
+    target_speed += delta_time;
     gui->set_score(score);
 
     player->update(delta_time);
@@ -108,7 +120,10 @@ void Game::update(float delta_time) {
   }
   else if (status == READY) {
     if (player->get_type() != 0) player->set_type(0);
-    target_speed = start_speed;
+    target_speed = ready_speed;
+    if (time_to_start < 2.5f) {
+      target_speed = start_speed;
+    }
     // Move player to initial position
     sf::Vector2f pos = player->get_pos();
     sf::Vector2f size = player->get_size();
@@ -163,6 +178,62 @@ void Game::clear() {
     for (Wall * wall : walls) {
         delete wall;
         wall = NULL;
+    }
+  }
+}
+
+void Game::generate_ready_walls() {
+  for (int type = 0; type < num_types; ++type) {
+    std::list<Wall*> & walls = all_walls[type];
+    float diff = walls_width;
+    if (type > 0) diff *= -1;
+    if (walls.empty() and type > 0) {
+      continue;
+    }
+    if (walls.empty() and type == 0) {
+      walls.push_back(new Wall(*this, type, speed,
+                               sf::Vector2f(SCREEN_WIDTH, SCREEN_HEIGHT/2.0f),
+                               sf::Vector2f(walls_width, 5.0f)));
+    }
+    float last_x = walls.back()->get_pos().x + walls_width;
+    float last_y = walls.back()->get_pos().y;
+    float last_height = walls.back()->get_size().y;
+    while (last_x < SCREEN_WIDTH) {
+      float new_y = std::max(0.0f, std::min(SCREEN_HEIGHT - walls_width, last_y-diff/2.0f));
+      float new_height = last_height + diff;
+      new_height = std::max(0.0f, std::min(new_height, SCREEN_HEIGHT - new_y));
+      walls.push_back(new Wall(*this, type, speed,
+                               sf::Vector2f(last_x, new_y),
+                               sf::Vector2f(walls_width, new_height)));
+      last_height = new_height;
+      last_x = last_x + walls_width;
+      last_y = new_y;
+    }
+  }
+}
+
+void Game::generate_menu_walls() {
+  float y_offset = 100.0f;
+  float sin_diff = 30.0f;
+  float size = 100.0f;
+  for (int type = 0; type < num_types; ++type) {
+    std::list<Wall*> & walls = all_walls[type];
+    float diff = sin_diff * sin(total_time * (1.337f * (type+1)));
+    float pos_y = y_offset*(type+1) + diff;
+    if (walls.empty()) {
+      walls.push_back(new Wall(*this, type, speed,
+                               sf::Vector2f(SCREEN_WIDTH, pos_y),
+                               sf::Vector2f(walls_width, 5.0f)));
+    }
+    float last_x = walls.back()->get_pos().x + walls_width;
+    float last_height = walls.back()->get_size().y;
+    while (last_x < SCREEN_WIDTH) {
+      float new_height = std::min(last_height + walls_width/2.0f, size);
+      walls.push_back(new Wall(*this, type, speed,
+                               sf::Vector2f(last_x, pos_y),
+                               sf::Vector2f(walls_width, new_height)));
+      last_height = new_height;
+      last_x = last_x + walls_width;
     }
   }
 }
