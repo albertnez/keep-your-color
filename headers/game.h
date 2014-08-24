@@ -19,8 +19,12 @@ private:
   void update(float delta_time);
   void process_events();
   void render();
+  // Clear everything in game
+  void clear();
   void generate_walls();
   void erase_old_walls();
+  // Check if player is inside a wall of its type
+  bool player_inside();
   sf::RenderWindow window;
   Input input;
   int num_types;

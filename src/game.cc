@@ -11,17 +11,11 @@ Game::Game(int width, int height, std::string title, int style)
 }
 
 Game::~Game() {
-  delete player;
-  for (std::list<Wall*> & walls : all_walls) {
-    for (Wall * wall : walls) {
-        delete wall;
-    }
-  }
+  clear();
 }
 
 bool Game::init() {
   // Default color scheeme for actors
-  std::cerr << "start init " << std::endl;
   input = Input();
   num_types = 2;
   speed = 500.0f;
@@ -36,7 +30,7 @@ bool Game::init() {
   player->set_speed(500);
   // Create Walls test
   
-  all_walls.resize(num_types);
+  all_walls = std::vector<std::list<Wall*>>(num_types);
   float pos_x = 0.0f;
   while (pos_x + walls_width < SCREEN_WIDTH) {
     all_walls[0].push_back(new Wall(*this, 0, speed, sf::Vector2f(pos_x, 0.0f),
@@ -45,7 +39,6 @@ bool Game::init() {
     ++num_total_walls;
     ++num_active_walls[0];
   }
-  std::cerr << "endl init " << std::endl;
   return true;
 }
 
@@ -80,6 +73,10 @@ void Game::update(float delta_time) {
   }
   erase_old_walls();
   generate_walls();
+  if (!player_inside()) {
+    clear();
+    init();
+  } 
 }
 
 void Game::process_events() {
@@ -95,7 +92,7 @@ void Game::process_events() {
 }
 
 void Game::render() {
-  window.clear(sf::Color::Black);
+  window.clear(sf::Color::White);
   for (std::list<Wall*> walls : all_walls) {
     for (Wall * wall : walls) {
       wall->render();
@@ -103,6 +100,16 @@ void Game::render() {
   }
   player->render();
   window.display();
+}
+
+void Game::clear() {
+  delete player;
+  for (std::list<Wall*> & walls : all_walls) {
+    for (Wall * wall : walls) {
+        delete wall;
+        wall = NULL;
+    }
+  }
 }
 
 void Game::generate_walls() {
@@ -140,12 +147,12 @@ void Game::generate_walls() {
       ++num_active_walls[type];
     }
   }
-  //std::cerr << "end gen" << std::endl;
 }
 
 void Game::erase_old_walls() {
   //for (std::list<Wall*> walls : all_walls) {
-  for (std::list<Wall*> & walls : all_walls) {
+  for (int type = 0; type < num_types; ++type) {
+    std::list<Wall*> & walls = all_walls[type];
     bool move_next = true;
     while (!walls.empty() and move_next) { 
       float last_x = walls.front()->get_pos().x + walls_width;
@@ -153,7 +160,32 @@ void Game::erase_old_walls() {
       if (move_next) {
         delete walls.front();
         walls.pop_front();
+        --num_total_walls;
+        --num_active_walls[type];
       }
     }
   }
+}
+
+bool Game::player_inside() {
+  sf::Vector2f pos = player->get_pos(), size = player->get_size();
+  std::vector<sf::Vector2f> points { pos,
+                                     pos+size,
+                                     sf::Vector2f(pos.x+size.x, pos.y),
+                                     sf::Vector2f(pos.x, pos.y+size.y) };
+  int inside_points = 0;  // Bitmask indicating wich points are inside a wall of same type
+  
+  std::list<Wall*> & walls = all_walls[player->get_type()];
+  std::list<Wall*>::iterator wall_it = walls.begin();
+  while (wall_it != walls.end() and (*wall_it)->get_pos().x <= points[1].x) {
+    for (int i = 0; i < 4; ++i) {
+      if (!(inside_points&(1<<i))) {
+        if ((*wall_it)->contains_point(points[i])) {
+          inside_points |= (1<<i);
+        }
+      }
+    }
+    ++wall_it;
+  }
+  return inside_points == (1<<4)-1;  // All points visited;
 }

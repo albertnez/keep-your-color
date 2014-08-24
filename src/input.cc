@@ -12,7 +12,6 @@ Input::~Input() {}
 void Input::update() {
   for (int k = 0; k < K_SIZE; ++k) {
     old_key_status[k] = key_status[k];
-    if (k == Key::PLAYER_ACTION) std::cerr << "Status: " << old_key_status[k] << std::endl;
   }
   for (int k = 0; k < K_SIZE; ++k) {
     key_status[k] = sf::Keyboard::isKeyPressed(key_mapping[k]);

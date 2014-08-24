@@ -11,8 +11,9 @@ public:
   ~Player();
   void update(float delta_time);
   void render(); 
+  const sf::Vector2f get_size();
 private:
-  float width, height;
+  sf::Vector2f size;
 };
 
 #endif  // PLAYER_H
