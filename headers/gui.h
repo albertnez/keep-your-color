@@ -11,12 +11,16 @@ public:
   ~Gui();
   bool init();
   void render();
+  void update();
   void set_score(int score);
+  void set_timeout(int timeout);
   void set_status(int status);
 private:
   Game & game;
   int status;
+  int index;
   int score;
+  int timeout;
   sf::Font font;
   std::vector<sf::Text> text;
 };

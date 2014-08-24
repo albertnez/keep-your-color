@@ -78,16 +78,44 @@ void Game::update(float delta_time) {
   generate_walls();
   // Playing update
   if (status == PLAYING) { 
+    score += delta_time;
+    gui->set_score(score);
+
     player->update(delta_time);
     if (!player_inside()) {
       status = GAME_OVER;
+      gui->set_status(status);
     } 
   }
   else if (status == MENU) {
+    gui->update();
+    if (input.key_pressed(input.Key::PLAYER_ACTION)) {
+        status = READY;
+        gui->set_status(status);
+        time_to_start = 3.0f;
+    }
+  }
+  else if (status == READY) {
+    if (player->get_type() != 0) player->set_type(0);
+    sf::Vector2f pos = player->get_pos();
+    sf::Vector2f size = player->get_size();
+    player->set_pos(sf::Vector2f(pos.x,
+                                 pos.y + ((SCREEN_HEIGHT/2.0f-size.y/2.0) - pos.y)*delta_time*2));
 
+    time_to_start -= delta_time;
+    gui->set_timeout(time_to_start+1);
+    if (time_to_start < 0.0f) {
+      status = PLAYING;
+      gui->set_status(status);
+    }
   }
   else if (status == GAME_OVER) {
-
+    score = 0;
+    if (input.key_pressed(input.Key::PLAYER_ACTION)) {
+      status = READY;
+      gui->set_status(status);
+      time_to_start = 3.0f;
+    }
   }
 }
 
@@ -126,7 +154,6 @@ void Game::clear() {
 }
 
 void Game::generate_walls() {
-  //std::cerr << "init gen" << std::endl;
   for (int type = 0; type < num_types; ++type) {
     std::list<Wall*> & walls = all_walls[type];
     if (!walls.empty()) {

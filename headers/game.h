@@ -16,7 +16,7 @@ public:
   void run();
   sf::RenderWindow & get_window();
   const Input & get_input();
-  enum Status { MENU, PLAYING, GAME_OVER, S_SIZE };
+  enum Status { MENU, READY, PLAYING, GAME_OVER, S_SIZE };
 private:
   void update(float delta_time);
   void process_events();
@@ -41,6 +41,8 @@ private:
   std::vector<std::list<Wall*>> all_walls;
 
   int status;
+  float time_to_start;
+  float score;
 };
 
 #endif  // GAME_H

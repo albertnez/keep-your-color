@@ -6,7 +6,7 @@
 class Input {
 public:
   enum Key {
-    PLAYER_UP, PLAYER_DOWN,
+    PLAYER_UP, PLAYER_DOWN, PLAYER_LEFT, PLAYER_RIGHT,
     PLAYER_ACTION,
     EXIT,
     K_SIZE
