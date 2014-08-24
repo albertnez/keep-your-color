@@ -166,7 +166,7 @@ void Game::generate_walls() {
         // limit new height
         new_height = std::max(walls_min_height, std::min(SCREEN_HEIGHT - new_y, new_height));
         // limit new y
-        new_y = std::max(0.0f, std::min(SCREEN_HEIGHT - new_height, new_height));
+        new_y = std::max(0.0f, std::min(SCREEN_HEIGHT - new_height, new_y));
         walls.push_back(new Wall(*this, type, speed,
                         sf::Vector2f(last_x, new_y),
                         sf::Vector2f(walls_width, new_height)));
@@ -181,7 +181,7 @@ void Game::generate_walls() {
     }
     else {
       walls.push_back(new Wall(*this, type, speed,
-                      sf::Vector2f(SCREEN_WIDTH + 20, 0),
+                      sf::Vector2f(SCREEN_WIDTH, 0),
                       sf::Vector2f(walls_width, 50)));
       ++num_total_walls;
       ++num_active_walls[type];

@@ -17,7 +17,10 @@ bool Gui::init() {
   index = 0;
   score = -1;
   timeout = 0;
-  if (!font.loadFromFile("fonts/NovaMono.ttf")) return false;
+  if (!font.loadFromFile("fonts/Audiowide-Regular.ttf")) {
+    std::cerr << "Error loading font fonts/NovaMono.ttf" << std::endl;
+    return false;
+  }
   for (sf::Text & t : text) {
     t.setFont(font);
     t.setColor(sf::Color::Black);
