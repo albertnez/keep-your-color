@@ -8,6 +8,7 @@
 #include <queue>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 
 // SFML
 #include <SFML/Window.hpp>

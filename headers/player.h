@@ -12,6 +12,7 @@ public:
   void update(float delta_time);
   void render(); 
   const sf::Vector2f get_size();
+  void set_pos(const sf::Vector2f & pos);
 private:
   sf::Vector2f size;
 };

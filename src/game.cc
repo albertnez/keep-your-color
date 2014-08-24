@@ -17,9 +17,12 @@ Game::~Game() {
 bool Game::init() {
   // Default color scheeme for actors
   input = Input();
+  gui = new Gui(*this);
+  if (!gui->init()) return false;
   num_types = 2;
   speed = 500.0f;
-  walls_width = 20.0f;
+  walls_width = 4.0f;
+  walls_min_height = 85.0f;
   num_total_walls = 0;
 
   num_active_walls = std::vector<int>(num_types, 0);
@@ -64,8 +67,8 @@ const Input & Game::get_input() {
 }
 
 void Game::update(float delta_time) {
+  // Common update
   input.update();
-  player->update(delta_time);
   for (std::list<Wall*> & walls : all_walls) {
     for (Wall * wall : walls) {
       wall->update(delta_time);
@@ -73,10 +76,19 @@ void Game::update(float delta_time) {
   }
   erase_old_walls();
   generate_walls();
-  if (!player_inside()) {
-    clear();
-    init();
-  } 
+  // Playing update
+  if (status == PLAYING) { 
+    player->update(delta_time);
+    if (!player_inside()) {
+      status = GAME_OVER;
+    } 
+  }
+  else if (status == MENU) {
+
+  }
+  else if (status == GAME_OVER) {
+
+  }
 }
 
 void Game::process_events() {
@@ -99,6 +111,7 @@ void Game::render() {
     }
   }
   player->render();
+  gui->render();
   window.display();
 }
 
@@ -121,10 +134,10 @@ void Game::generate_walls() {
       float last_y = walls.back()->get_pos().y;
       float last_height = walls.back()->get_size().y;
       while (last_x < SCREEN_WIDTH) {
-        float new_y = last_y + (rand()%20)*(rand()&1 ? -1:1);
-        float new_height = last_height + (rand()%10)*(rand()&1 ? -1:1);
+        float new_y = last_y + (rand()%int(walls_width))*(rand()&1 ? -1:1);
+        float new_height = last_height + (rand()%int(walls_width))*(rand()&1 ? -1:1);
         // limit new height
-        new_height = std::max(50.0f, std::min(float(SCREEN_HEIGHT), new_height));
+        new_height = std::max(walls_min_height, std::min(SCREEN_HEIGHT - new_y, new_height));
         // limit new y
         new_y = std::max(0.0f, std::min(SCREEN_HEIGHT - new_height, new_height));
         walls.push_back(new Wall(*this, type, speed,
@@ -141,7 +154,7 @@ void Game::generate_walls() {
     }
     else {
       walls.push_back(new Wall(*this, type, speed,
-                      sf::Vector2f(SCREEN_WIDTH, 0),
+                      sf::Vector2f(SCREEN_WIDTH + 20, 0),
                       sf::Vector2f(walls_width, 50)));
       ++num_total_walls;
       ++num_active_walls[type];

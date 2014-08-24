@@ -36,3 +36,7 @@ void Player::render() {
 const sf::Vector2f Player::get_size() {
   return size;
 }
+
+void Player::set_pos(const sf::Vector2f & pos) {
+  this->pos = pos;
+}
