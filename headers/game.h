@@ -48,10 +48,11 @@ private:
   std::vector<int> num_active_walls;
 
   float walls_move_timeout;
-  std::vector<int> walls_target;
-  std::vector<int> next_walls_target;
-  std::vector<float> target_positions;
+  float walls_move_timer;
   int num_positions;
+  std::vector<int> walls_target;
+  std::vector<int> walls_next_target;
+  std::vector<float> target_positions;
 
   Player* player;
   std::vector<std::list<Wall*>> all_walls;
