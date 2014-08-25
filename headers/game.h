@@ -24,8 +24,9 @@ private:
   // Clear everything in game
   void clear();
   // Different kinds of generation
-  void generate_menu_walls();
+  void generate_game_walls(float delta_time);
   void generate_ready_walls();
+  void generate_menu_walls();
   void generate_walls();
   void erase_old_walls();
   // Check if player is inside a wall of its type
@@ -45,6 +46,12 @@ private:
   float walls_min_height;
   int num_total_walls;
   std::vector<int> num_active_walls;
+
+  float walls_move_timeout;
+  std::vector<int> walls_target;
+  std::vector<int> next_walls_target;
+  std::vector<float> target_positions;
+  int num_positions;
 
   Player* player;
   std::vector<std::list<Wall*>> all_walls;

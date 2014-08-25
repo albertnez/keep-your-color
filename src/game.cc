@@ -36,22 +36,14 @@ bool Game::init() {
 
   num_active_walls = std::vector<int>(num_types, 0);
 
-  Actor::colors = {sf::Color::Red, sf::Color::Blue}; 
-
-  player = (new Player(*this, 0, 500.0f));
-  // Create Walls test
-  
   all_walls = std::vector<std::list<Wall*>>(num_types);
-  /*
-  float pos_x = 0.0f;
-  while (pos_x + walls_width < SCREEN_WIDTH) {
-    all_walls[0].push_back(new Wall(*this, 0, speed, sf::Vector2f(pos_x, 0.0f),
-                           sf::Vector2f(walls_width, SCREEN_HEIGHT)));
-    pos_x += walls_width;
-    ++num_total_walls;
-    ++num_active_walls[0];
-  }
-  */
+  walls_target = next_walls_target = std::vector<int>(num_types);
+  target_positions = std::vector<float> { 50.0f, 150.0f, 250.0f, 350.0f };
+  num_positions = 4;
+
+  Actor::colors = {sf::Color::Red, sf::Color::Blue}; 
+  player = (new Player(*this, 0, 500.0f));
+
   return true;
 }
 
@@ -80,7 +72,7 @@ void Game::update(float delta_time) {
   // Common update
   input.update();
   // Update speed to target
-  speed += (target_speed - speed)*delta_time;
+  speed += (target_speed - speed)*delta_time*10.0f;
 
   total_time += delta_time;
 
@@ -100,7 +92,7 @@ void Game::update(float delta_time) {
   // Playing update
   if (status == PLAYING) { 
     score += delta_time*100;
-    target_speed += delta_time;
+    target_speed += delta_time*5.0f;
     gui->set_score(score);
 
     player->update(delta_time);
@@ -179,6 +171,21 @@ void Game::clear() {
         delete wall;
         wall = NULL;
     }
+  }
+}
+
+void Game::generate_game_walls(float delta_time) {
+  for (int type = 0; type < num_types; ++type) {
+    std::list<Wall*> & walls = all_walls[type];
+    if (walls.empty()) {
+      walls.push_back(new Wall(*this, type, speed,
+                               sf::Vector2f(SCREEN_WIDTH, 150.0f*(type+1)),
+                               sf::Vector2f(walls_width, 0.0f)));
+    }
+    
+    
+
+
   }
 }
 

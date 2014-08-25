@@ -4,7 +4,7 @@
 
 Gui::Gui(Game & game) : game(game) {
   text.resize(Game::S_SIZE);
-  text[Game::MENU].setString("keep your color" 
+  text[Game::MENU].setString("Keep your color" 
                              "\n\nStay in the zone that shares your color."
                              "\nYou can change your color in a mixed color zone."
                              "\nTo your change color, press SPACE."
