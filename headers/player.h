@@ -15,6 +15,9 @@ public:
   void set_pos(const sf::Vector2f & pos);
 private:
   sf::Vector2f size;
+  float act_speed;
+  float acc;
+  float dec;
 };
 
 #endif  // PLAYER_H

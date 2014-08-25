@@ -4,7 +4,7 @@
 
 int main() {
   srand(time(NULL));
-  Game game(SCREEN_WIDTH, SCREEN_HEIGHT, "ld30", sf::Style::Default);
+  Game game(SCREEN_WIDTH, SCREEN_HEIGHT, "Keep your color", sf::Style::Default);
   if (game.init()) {
     game.run();
   }

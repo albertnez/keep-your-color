@@ -47,9 +47,10 @@ private:
   int num_total_walls;
   std::vector<int> num_active_walls;
 
-  float walls_move_timeout;
-  float walls_move_timer;
+  int walls_move_timeout;
+  int walls_move_timer;
   int num_positions;
+  int max_distance;
   std::vector<int> walls_target;
   std::vector<int> walls_next_target;
   std::vector<float> target_positions;
