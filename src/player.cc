@@ -4,11 +4,12 @@
 #include "utils.h"
 #include "input.h"
 
+const float Player::acc = 1000.0f;
+const float Player::dec = -2000.0f;
+
 Player::Player(Game & game, int type, float speed) : Actor(game, type, speed) {
   size = sf::Vector2f(20, 20);
   act_speed = 0.0f;
-  acc = 1000.0f;
-  dec = -2000.0f;
   pos.x = 50;
   pos.y = SCREEN_HEIGHT/2.0f - size.y/2.0f;
 }

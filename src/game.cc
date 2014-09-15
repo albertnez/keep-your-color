@@ -37,8 +37,6 @@ bool Game::init() {
   target_speed = start_speed;
   speed = start_speed;
 
-  num_active_walls = std::vector<int>(num_types, 0);
-
   all_walls = std::vector<std::list<Wall*>>(num_types);
 
   walls_next_target_timeout = 2.0f;

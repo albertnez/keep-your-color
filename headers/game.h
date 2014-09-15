@@ -47,11 +47,7 @@ private:
   // speed
   float speed;
   float target_speed;
-  //float game_over_speed;
-  //float ready_speed;
   // Walls
-  int num_total_walls;
-  std::vector<int> num_active_walls;
 
   float walls_next_target_timeout;
   float walls_next_target_timer;
