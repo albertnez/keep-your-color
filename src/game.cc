@@ -31,7 +31,7 @@ bool Game::init() {
   target_speed = start_speed;
   speed = start_speed;
   walls_width = 4.0f;
-  walls_min_height = 120.0f;
+  walls_min_height = 180.0f;
   num_total_walls = 0;
 
   num_active_walls = std::vector<int>(num_types, 0);
