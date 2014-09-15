@@ -34,25 +34,31 @@ private:
   sf::RenderWindow window;
   Input input;
   Gui * gui;
-  int num_types;
+
+  // Static members
+  const static int num_types;
+  const static float game_over_speed;
+  const static float ready_speed;
+  const static float start_speed;
+  const static float walls_width;
+  const static float walls_min_height;
+  const static int num_positions;
+
   // speed
-  float start_speed;
   float speed;
   float target_speed;
-  float game_over_speed;
-  float ready_speed;
+  //float game_over_speed;
+  //float ready_speed;
   // Walls
-  float walls_width;
-  float walls_min_height;
   int num_total_walls;
   std::vector<int> num_active_walls;
 
-  int walls_move_timeout;
-  int walls_move_timer;
-  int num_positions;
+  float walls_next_target_timeout;
+  float walls_next_target_timer;
   int max_distance;
   std::vector<int> walls_target;
   std::vector<int> walls_next_target;
+  std::vector<int> walls_last_target;
   std::vector<float> target_positions;
 
   Player* player;

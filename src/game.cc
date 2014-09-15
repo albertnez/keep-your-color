@@ -4,6 +4,14 @@
 #include "wall.h"
 #include <iostream>
 
+const int Game::num_types = 2;
+const float Game::game_over_speed = 200.0f;
+const float Game::ready_speed = 1000.0f;
+const float Game::start_speed = 300.0f;
+const float Game::walls_width = 4.0f;
+const float Game::walls_min_height = 180.0f; 
+const int Game::num_positions = 8;
+
 Game::Game(int width, int height, std::string title, int style)
   : window(sf::VideoMode(width, height), title, style) {
   window.setMouseCursorVisible(false);
@@ -12,8 +20,8 @@ Game::Game(int width, int height, std::string title, int style)
   input = Input();
   gui = new Gui(*this);
 
-  game_over_speed = 200.0f;
-  ready_speed = 1000.0f;
+  //game_over_speed = 200.0f;
+  //ready_speed = 1000.0f;
   status = MENU;
   time_to_start = 0;
   score = 0;
@@ -26,23 +34,17 @@ Game::~Game() {
 
 bool Game::init() {
   if (!gui->init()) return false;
-  num_types = 2;
-  start_speed = 300.0f;
   target_speed = start_speed;
   speed = start_speed;
-  walls_width = 4.0f;
-  walls_min_height = 180.0f;
-  num_total_walls = 0;
 
   num_active_walls = std::vector<int>(num_types, 0);
 
   all_walls = std::vector<std::list<Wall*>>(num_types);
 
-  walls_move_timeout = 400;
-  walls_move_timer = walls_move_timeout;
-  num_positions = 8;
+  walls_next_target_timeout = 2.0f;
+  walls_next_target_timer = walls_next_target_timeout;
   max_distance = num_positions/2;
-  walls_target = walls_next_target = std::vector<int>(num_types);
+  walls_last_target = walls_target = walls_next_target = std::vector<int>(num_types);
   for (int type = 0; type < num_types; ++type) {
     walls_target[type] = rand()%num_positions;
     walls_next_target[type] = rand()%num_positions;
@@ -194,9 +196,12 @@ void Game::clear() {
 }
 
 void Game::generate_game_walls(float delta_time) {
-  if (walls_move_timer < 0) {
-    walls_move_timer = walls_move_timeout;
+  walls_next_target_timer -= delta_time;
+  if (walls_next_target_timer < 0) {
+    walls_next_target_timer = walls_next_target_timeout;
+    walls_next_target_timeout *= 0.95f;
     for (int type = 0; type < num_types; ++type) {
+      walls_last_target[type] = walls_target[type];
       walls_target[type] = walls_next_target[type];
     }
     // Check if valid even if joined before
@@ -222,7 +227,6 @@ void Game::generate_game_walls(float delta_time) {
   for (int type = 0; type < num_types; ++type) {
     std::list<Wall*> & walls = all_walls[type];
     if (walls.empty()) {
-      --walls_move_timer;
       walls.push_back(new Wall(*this, type, speed,
                                sf::Vector2f(SCREEN_WIDTH, 150.0f*(type+1)),
                                sf::Vector2f(walls_width, 0.0f)));
@@ -231,11 +235,13 @@ void Game::generate_game_walls(float delta_time) {
     float last_y = walls.back()->get_pos().y;
     float last_height = walls.back()->get_size().y;
     while (last_x < SCREEN_WIDTH) {
-      --walls_move_timer;
-      int ind = walls_target[type];
-      if (ind == -1) ind = 0;
-      float new_y = last_y + (target_positions[ind] - last_y)*delta_time;
+      //int ind = walls_target[type];
+      int target_ind = std::max(0, walls_target[type]);
+      int last_ind = std::max(0, walls_last_target[type]);
+      float new_y = last_y + (target_positions[target_ind] - last_y)*delta_time;
+    //float new_y = last_y + (target_positions[target_ind] - target_positions[last_ind])*delta_time;
       float new_height = last_height + (walls_min_height - last_height)*delta_time;
+      //float new_height = last_height + (walls_target[type] - walls_last_target[type])*delta_time;
       if (walls_target[type] == -1) new_height = last_height + (0.0f - last_height)*delta_time;
       walls.push_back(new Wall(*this, type, speed,
                                sf::Vector2f(last_x, new_y),
@@ -313,8 +319,9 @@ void Game::generate_walls() {
       while (last_x < SCREEN_WIDTH) {
         float new_y = last_y + (rand()%int(walls_width))*(rand()&1 ? -1:1);
         float new_height = last_height + (rand()%int(walls_width))*(rand()&1 ? -1:1);
-        // limit new height
         new_height = std::max(walls_min_height, std::min(SCREEN_HEIGHT - new_y, new_height));
+        new_height = std::min(new_height, last_height + walls_width/2.0f);
+        // limit new height
         // limit new y
         new_y = std::max(0.0f, std::min(SCREEN_HEIGHT - new_height, new_y));
         walls.push_back(new Wall(*this, type, speed,
@@ -324,17 +331,12 @@ void Game::generate_walls() {
         last_x += walls_width;
         last_y = new_y;
         last_height = new_height;
-
-        ++num_total_walls;
-        ++num_active_walls[type];
       }
     }
     else {
       walls.push_back(new Wall(*this, type, speed,
                       sf::Vector2f(SCREEN_WIDTH, 0),
                       sf::Vector2f(walls_width, 50)));
-      ++num_total_walls;
-      ++num_active_walls[type];
     }
   }
 }
@@ -350,8 +352,6 @@ void Game::erase_old_walls() {
       if (move_next) {
         delete walls.front();
         walls.pop_front();
-        --num_total_walls;
-        --num_active_walls[type];
       }
     }
   }
