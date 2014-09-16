@@ -15,6 +15,7 @@ public:
   void set_score(int score);
   void set_timeout(int timeout);
   void set_status(int status);
+  void save_score();
 private:
   Game & game;
   int status;

@@ -21,7 +21,12 @@ bool Gui::init() {
   status = Game::MENU;
   index = 0;
   score = 0;
+  std::ifstream file("best_score.txt");
   best_score = 0;
+  if (file.is_open()) {
+    file >> best_score;
+  }
+  file.close();
   timeout = 0;
   if (!font.loadFromFile("fonts/Audiowide-Regular.ttf")) {
     std::cerr << "Error loading font fonts/NovaMono.ttf" << std::endl;
@@ -41,7 +46,6 @@ void Gui::render() {
 }
 
 void Gui::update() {
-  const Input & input = game.get_input();
 }
 
 void Gui::set_score(int score) {
@@ -68,13 +72,26 @@ void Gui::set_status(int status) {
   if (status == Game::PLAYING) set_score(0);
   if (status == Game::READY) set_timeout(3);
   if (status == Game::GAME_OVER) {
+    bool new_best_score = (score > best_score);
     best_score = std::max(score, best_score);
     std::stringstream ss;
-    ss << "Game Over." <<
-          "\nScore: " << score << 
-          "\nBest score: " << best_score << 
+    ss << "Game Over.";
+    if (new_best_score) {
+      ss << "\nNew best score: " << score;
+    }
+    else {
+      ss << "\nScore: " << score;
+    }
+    ss << "\nBest score: " << best_score << 
           "\nPress Space to start again";
     text[Game::GAME_OVER].setString(ss.str());
   }
 }
 
+void Gui::save_score() {
+  std::ofstream file("best_score.txt");
+  if (file.is_open()) {
+    file << best_score;
+  }
+  file.close();
+}

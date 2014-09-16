@@ -169,10 +169,8 @@ void Game::update(float delta_time) {
 void Game::process_events() {
   sf::Event event;
   while (window.pollEvent(event)) {
-    if (event.type == sf::Event::Closed) {
-      window.close();
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+    if (event.type == sf::Event::Closed or sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
+      gui->save_score();
       window.close();
     }
   }
