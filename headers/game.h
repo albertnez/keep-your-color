@@ -43,6 +43,7 @@ private:
   const static float walls_width;
   const static float walls_min_height;
   const static int num_positions;
+  const static float init_walls_next_target_timeout;
 
   // speed
   float speed;

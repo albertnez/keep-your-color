@@ -11,6 +11,7 @@ const float Game::start_speed = 300.0f;
 const float Game::walls_width = 4.0f;
 const float Game::walls_min_height = 180.0f; 
 const int Game::num_positions = 8;
+const float Game::init_walls_next_target_timeout = 2.0f;
 
 Game::Game(int width, int height, std::string title, int style)
   : window(sf::VideoMode(width, height), title, style) {
@@ -37,7 +38,7 @@ bool Game::init() {
 
   all_walls = std::vector<std::list<Wall*>>(num_types);
 
-  walls_next_target_timeout = 2.0f;
+  walls_next_target_timeout = init_walls_next_target_timeout;
   walls_next_target_timer = walls_next_target_timeout;
   max_distance = num_positions/2;
   walls_last_target = walls_target = walls_next_target = std::vector<int>(num_types);
@@ -132,6 +133,14 @@ void Game::update(float delta_time) {
     target_speed = ready_speed;
     if (time_to_start < 2.5f) {
       target_speed = start_speed;
+      walls_next_target_timeout = init_walls_next_target_timeout;
+      for (int type = 0; type < num_types; ++type) {
+        walls_target[type] = rand()%num_positions;
+        walls_next_target[type] = rand()%num_positions;
+        if (std::abs(walls_next_target[type] - walls_target[type]) > max_distance) {
+          walls_next_target[type] = (walls_target[type] - walls_next_target[type])/2;
+        }
+  }
     }
     // Move player to initial position
     sf::Vector2f pos = player->get_pos();
@@ -233,7 +242,6 @@ void Game::generate_game_walls(float delta_time) {
     while (last_x < SCREEN_WIDTH) {
       //int ind = walls_target[type];
       int target_ind = std::max(0, walls_target[type]);
-      int last_ind = std::max(0, walls_last_target[type]);
       float new_y = last_y + (target_positions[target_ind] - last_y)*delta_time;
     //float new_y = last_y + (target_positions[target_ind] - target_positions[last_ind])*delta_time;
       float new_height = last_height + (walls_min_height - last_height)*delta_time;

@@ -45,7 +45,6 @@ void Player::update(float delta_time) {
       act_speed = new_speed;
     }
   }
-  std::cout << "act speed: " << act_speed << std::endl;
   pos.y = std::min(SCREEN_HEIGHT - size.y, std::max(0.0f, pos.y + act_speed * delta_time));
 
   if (input.key_pressed(input.Key::PLAYER_ACTION)) {
