@@ -4,8 +4,8 @@
 #include "utils.h"
 #include "input.h"
 
-const float Player::acc = 500.0f;
-const float Player::dec = 2000.0f;
+const float Player::acc = 700.0f;
+const float Player::dec = 3000.0f;
 const float Player::first_move_speed = 50.0f;
 
 Player::Player(Game & game, int type, float speed) : Actor(game, type, speed) {
@@ -30,12 +30,10 @@ void Player::update(float delta_time) {
     }
     act_speed += acceleration * delta_time;
     act_speed = std::min(speed, std::max(-speed, act_speed));
-    /*
-    if (input.key_down(input.Key::PLAYER_UP)) act_speed -= 200*delta_time;
-    else act_speed += 200*delta_time;
-    */
   }
-  else {
+  if ((input.key_down(input.Key::PLAYER_DOWN) and act_speed < -EPSILON) or 
+      (input.key_down(input.Key::PLAYER_UP) and act_speed > EPSILON) or
+      !(input.key_down(input.Key::PLAYER_DOWN) ^ input.key_down(input.Key::PLAYER_UP))) {
     if (std::abs(act_speed) > EPSILON) {
       float act_dec = dec;
       if (act_speed > EPSILON) act_dec *= -1;

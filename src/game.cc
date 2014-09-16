@@ -110,7 +110,7 @@ void Game::update(float delta_time) {
   // Playing update
   if (status == PLAYING) { 
     score += delta_time*100;
-    target_speed += delta_time*5.0f;
+    target_speed += delta_time*10.0f;
     gui->set_score(score);
 
     player->update(delta_time);
@@ -204,7 +204,7 @@ void Game::generate_game_walls(float delta_time) {
   walls_next_target_timer -= delta_time;
   if (walls_next_target_timer < 0) {
     walls_next_target_timer = walls_next_target_timeout;
-    walls_next_target_timeout *= 0.95f;
+    walls_next_target_timeout = std::max(0.5f, walls_next_target_timeout*0.95f);
     for (int type = 0; type < num_types; ++type) {
       walls_last_target[type] = walls_target[type];
       walls_target[type] = walls_next_target[type];
