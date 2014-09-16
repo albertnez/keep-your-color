@@ -18,5 +18,6 @@
 
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 480;
+const float EPSILON = 1e-6;
 
 #endif  // UTILS_H 

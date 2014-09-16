@@ -20,8 +20,6 @@ Game::Game(int width, int height, std::string title, int style)
   input = Input();
   gui = new Gui(*this);
 
-  //game_over_speed = 200.0f;
-  //ready_speed = 1000.0f;
   status = MENU;
   time_to_start = 0;
   score = 0;

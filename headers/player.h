@@ -17,6 +17,7 @@ private:
   sf::Vector2f size;
   const static float acc;
   const static float dec;
+  const static float first_move_speed;
   float act_speed;
 };
 

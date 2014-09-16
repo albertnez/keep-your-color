@@ -4,8 +4,9 @@
 #include "utils.h"
 #include "input.h"
 
-const float Player::acc = 1000.0f;
-const float Player::dec = -2000.0f;
+const float Player::acc = 500.0f;
+const float Player::dec = 2000.0f;
+const float Player::first_move_speed = 50.0f;
 
 Player::Player(Game & game, int type, float speed) : Actor(game, type, speed) {
   size = sf::Vector2f(20, 20);
@@ -19,17 +20,34 @@ Player::~Player() {}
 void Player::update(float delta_time) {
   const Input & input = game.get_input();
   if (input.key_down(input.Key::PLAYER_DOWN) ^ input.key_down(input.Key::PLAYER_UP)) {
-    act_speed = std::min(speed, act_speed + acc * delta_time);
+    float acceleration = acc;
+    if (input.key_down(input.Key::PLAYER_UP)) {
+      acceleration *= -1;
+      if (std::abs(act_speed) < EPSILON) act_speed = -1*first_move_speed;
+    }
+    else {
+      if (std::abs(act_speed) < EPSILON) act_speed = first_move_speed;
+    }
+    act_speed += acceleration * delta_time;
+    act_speed = std::min(speed, std::max(-speed, act_speed));
+    /*
+    if (input.key_down(input.Key::PLAYER_UP)) act_speed -= 200*delta_time;
+    else act_speed += 200*delta_time;
+    */
   }
   else {
-    act_speed = std::max(0.0f, act_speed + dec * delta_time);
+    if (std::abs(act_speed) > EPSILON) {
+      float act_dec = dec;
+      if (act_speed > EPSILON) act_dec *= -1;
+
+      float new_speed = act_speed + act_dec * delta_time;
+      if (act_speed * new_speed < -EPSILON) new_speed = 0.0f;
+      act_speed = new_speed;
+    }
   }
-  if (input.key_down(input.Key::PLAYER_DOWN)) {
-    pos.y = std::min(SCREEN_HEIGHT - size.y, pos.y + delta_time * act_speed);
-  }
-  if (input.key_down(input.Key::PLAYER_UP)) {
-    pos.y = std::max(0.0f, pos.y - delta_time * act_speed);
-  }
+  std::cout << "act speed: " << act_speed << std::endl;
+  pos.y = std::min(SCREEN_HEIGHT - size.y, std::max(0.0f, pos.y + act_speed * delta_time));
+
   if (input.key_pressed(input.Key::PLAYER_ACTION)) {
     type = 1-type;
   }
