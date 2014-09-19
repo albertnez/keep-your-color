@@ -253,10 +253,11 @@ void Game::generate_game_walls(float delta_time) {
     float incr_height = (target_positions[target_ind] - last_y)/float(num_walls_incoming);
     while (last_x < SCREEN_WIDTH) {
       //int ind = walls_target[type];
-      //float new_y = last_y + (target_positions[target_ind] - last_y)*delta_time;
-      float new_y = last_y + incr_height;
-      //float new_y = 
-      //float new_y = last_y + (target_positions[target_ind] - target_positions[last_ind])*delta_time;
+      float factor = 1.0;
+      factor = std::max(1.0f, 3.0f*(1-time_left));
+      float new_y = last_y + (target_positions[target_ind] - last_y)*delta_time*factor;
+      //float new_y = last_y + incr_height;  // Straight lines
+
       float new_height = last_height + (walls_min_height - last_height)*delta_time;
       //float new_height = last_height + (walls_target[type] - walls_last_target[type])*delta_time;
       if (walls_target[type] == -1) new_height = last_height + (0.0f - last_height)*delta_time;
