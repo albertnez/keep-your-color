@@ -12,6 +12,7 @@ const float Game::walls_width = 4.0f;
 const float Game::walls_min_height = 180.0f; 
 const int Game::num_positions = 8;
 const float Game::init_walls_next_target_timeout = 2.0f;
+const int Game::init_one_way_probability = 20;  // 30 percent of probability of only one way
 
 Game::Game(int width, int height, std::string title, int style)
   : window(sf::VideoMode(width, height), title, style) {
@@ -21,6 +22,7 @@ Game::Game(int width, int height, std::string title, int style)
   input = Input();
   gui = new Gui(*this);
 
+  one_way_probability = init_one_way_probability;
   status = MENU;
   time_to_start = 0;
   score = 0;
@@ -133,6 +135,7 @@ void Game::update(float delta_time) {
     target_speed = ready_speed;
     if (time_to_start < 2.5f) {
       target_speed = start_speed;
+      one_way_probability = init_one_way_probability;
       walls_next_target_timeout = init_walls_next_target_timeout;
       for (int type = 0; type < num_types; ++type) {
         walls_target[type] = rand()%num_positions;
@@ -140,7 +143,7 @@ void Game::update(float delta_time) {
         if (std::abs(walls_next_target[type] - walls_target[type]) > max_distance) {
           walls_next_target[type] = (walls_target[type] - walls_next_target[type])/2;
         }
-  }
+      }
     }
     // Move player to initial position
     sf::Vector2f pos = player->get_pos();
@@ -203,13 +206,16 @@ void Game::generate_game_walls(float delta_time) {
   if (walls_next_target_timer < 0) {
     walls_next_target_timer = walls_next_target_timeout;
     walls_next_target_timeout = std::max(0.5f, walls_next_target_timeout*0.95f);
+    one_way_probability = std::min(100, one_way_probability+2);
+    bool one_path = false;
     for (int type = 0; type < num_types; ++type) {
       walls_last_target[type] = walls_target[type];
       walls_target[type] = walls_next_target[type];
+      if (walls_target[type] == -1) one_path = true;
     }
-    // Check if valid even if joined before
-    bool join = (rand()%100 < 30);
-    if (join) {
+    bool join = (rand()%100 < one_way_probability);
+    // Only join if there is no one_path in process
+    if (!one_path and join) {
       int pos = rand()%num_positions;
       for (int type = 0; type < num_types; ++type) {
         walls_target[type] = pos;
