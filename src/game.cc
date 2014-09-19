@@ -19,6 +19,8 @@ Game::Game(int width, int height, std::string title, int style)
   window.setMouseCursorVisible(false);
   window.setVerticalSyncEnabled(true);
 
+  sf::RenderStates(BlendMultiply);
+
   input = Input();
   gui = new Gui(*this);
 
@@ -243,11 +245,18 @@ void Game::generate_game_walls(float delta_time) {
     float last_x = walls.back()->get_pos().x + walls_width;
     float last_y = walls.back()->get_pos().y;
     float last_height = walls.back()->get_size().y;
+
+    //time left
+    float time_left = walls_next_target_timer;
+    int num_walls_incoming = (SCREEN_WIDTH-last_x + speed*time_left)/walls_width;
+    int target_ind = std::max(0, walls_target[type]);
+    float incr_height = (target_positions[target_ind] - last_y)/float(num_walls_incoming);
     while (last_x < SCREEN_WIDTH) {
       //int ind = walls_target[type];
-      int target_ind = std::max(0, walls_target[type]);
-      float new_y = last_y + (target_positions[target_ind] - last_y)*delta_time;
-    //float new_y = last_y + (target_positions[target_ind] - target_positions[last_ind])*delta_time;
+      //float new_y = last_y + (target_positions[target_ind] - last_y)*delta_time;
+      float new_y = last_y + incr_height;
+      //float new_y = 
+      //float new_y = last_y + (target_positions[target_ind] - target_positions[last_ind])*delta_time;
       float new_height = last_height + (walls_min_height - last_height)*delta_time;
       //float new_height = last_height + (walls_target[type] - walls_last_target[type])*delta_time;
       if (walls_target[type] == -1) new_height = last_height + (0.0f - last_height)*delta_time;
