@@ -10,7 +10,7 @@ const float Game::ready_speed = 1000.0f;
 const float Game::start_speed = 300.0f;
 const float Game::walls_width = 4.0f;
 const float Game::walls_min_height = 180.0f; 
-const int Game::walls_max_dist = 4;
+const int Game::walls_max_dist = 0;
 const int Game::num_positions = 8;
 const float Game::init_walls_next_target_timeout = 2.0f;
 const int Game::init_one_way_probability = 20;
@@ -197,46 +197,53 @@ void Game::clear() {
 
 void Game::generate_game_walls(float delta_time) {
   walls_next_target_timer -= delta_time;
+  // Timeout to change target
   if (walls_next_target_timer < 0) {
+    // Increase difficulty
     walls_next_target_timer = walls_next_target_timeout;
     walls_next_target_timeout = std::max(0.5f, walls_next_target_timeout*0.95f);
     one_way_probability = std::min(100, one_way_probability+2);
+
+    // Update target and check if now there is only one path
     bool one_path = false;
     for (int type = 0; type < num_types; ++type) {
       walls_last_target[type] = walls_target[type];
       walls_target[type] = walls_next_target[type];
-      if (walls_target[type] == -1) one_path = true;
+      if (walls_target[type] < 0) one_path = true;
     }
+
+    // Join now to make next target only one path
     bool join = (rand()%100 < one_way_probability);
-    // Only join if there is no one_path in process
     if (!one_path and join) {
       int pos = 0;
       for (int type = 0; type < num_types; ++type) {
-        pos += walls_last_target[type];
+        pos += abs(walls_last_target[type]);
       }
       pos /= num_types;
       for (int type = 0; type < num_types; ++type) {
         walls_target[type] = pos;
       }
       for (int type = 0; type < num_types; ++type) {
-        walls_next_target[type] = -1;  // Eliminate
+        walls_next_target[type] = -(1 + (rand()%(num_positions-1)));  // Close path in random position
       }
-      // Type to survive
+      // Type that will survive, assign it a random position
       int survive = rand()%num_types;
       walls_next_target[survive] = rand()%num_positions;
     }
-    else {
-      // Limit next target by walls_max_dist
-      for (int type = 0; type < num_types; ++type) {
+    // Limit next target by walls_max_dist
+    for (int type = 0; type < num_types; ++type) {
+      // Check the distance even if there is a negative target
+      if (walls_next_target[type] >= 0) {
         walls_next_target[type] = rand()%num_positions;
-        if (std::abs(walls_target[type]-walls_next_target[type] > walls_max_dist)) {
-          if (walls_target[type] > walls_next_target[type]) {
-            walls_next_target[type] = walls_target[type] - walls_max_dist;
+        if (std::abs(std::abs(walls_target[type])-walls_next_target[type] > walls_max_dist)) {
+          std::cout << "before: " << walls_target[type] << " " << walls_next_target[type] << std::endl;
+          if (std::abs(walls_target[type]) > walls_next_target[type]) {
+            walls_next_target[type] = std::abs(walls_target[type]) - walls_max_dist;
           }
           else {
-            walls_next_target[type] = walls_target[type] + walls_max_dist;
+            walls_next_target[type] = std::abs(walls_target[type]) + walls_max_dist;
           }
-
+          std::cout << "now: " << walls_target[type] << " " << walls_next_target[type] << std::endl;
         }
       }
     }
@@ -255,7 +262,8 @@ void Game::generate_game_walls(float delta_time) {
     //time left
     float time_left = walls_next_target_timer;
     //int num_walls_incoming = (SCREEN_WIDTH-last_x + speed*time_left)/walls_width;
-    int target_ind = std::max(0, walls_target[type]);
+    //int target_ind = std::max(0, walls_target[type]);
+    int target_ind = std::abs(walls_target[type]);  // Abs to send closed paths to its position
     //float incr_height = (target_positions[target_ind] - last_y)/float(num_walls_incoming);
     while (last_x < SCREEN_WIDTH) {
       //int ind = walls_target[type];
@@ -266,7 +274,7 @@ void Game::generate_game_walls(float delta_time) {
 
       float new_height = last_height + (walls_min_height - last_height)*delta_time;
       //float new_height = last_height + (walls_target[type] - walls_last_target[type])*delta_time;
-      if (walls_target[type] == -1) new_height = last_height + (0.0f - last_height)*delta_time;
+      if (walls_target[type] < 0) new_height = last_height + (0.0f - last_height)*delta_time;
       walls.push_back(new Wall(*this, type, speed,
                                sf::Vector2f(last_x, new_y),
                                sf::Vector2f(walls_width, new_height)));
