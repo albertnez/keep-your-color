@@ -10,9 +10,10 @@ const float Game::ready_speed = 1000.0f;
 const float Game::start_speed = 300.0f;
 const float Game::walls_width = 4.0f;
 const float Game::walls_min_height = 180.0f; 
+const int Game::walls_max_dist = 4;
 const int Game::num_positions = 8;
 const float Game::init_walls_next_target_timeout = 2.0f;
-const int Game::init_one_way_probability = 20;  // 30 percent of probability of only one way
+const int Game::init_one_way_probability = 20;
 
 Game::Game(int width, int height, std::string title, int style)
   : window(sf::VideoMode(width, height), title, style) {
@@ -44,14 +45,9 @@ bool Game::init() {
 
   walls_next_target_timeout = init_walls_next_target_timeout;
   walls_next_target_timer = walls_next_target_timeout;
-  max_distance = num_positions/2;
   walls_last_target = walls_target = walls_next_target = std::vector<int>(num_types);
   for (int type = 0; type < num_types; ++type) {
-    walls_target[type] = rand()%num_positions;
-    walls_next_target[type] = rand()%num_positions;
-    if (std::abs(walls_next_target[type] - walls_target[type]) > max_distance) {
-      walls_next_target[type] = (walls_target[type] - walls_next_target[type])/2;
-    }
+    walls_target[type] = walls_next_target[type] =  rand()%num_positions;
   }
   target_positions = std::vector<float> { 0.0f, 
                                           50.0f, 
@@ -140,11 +136,7 @@ void Game::update(float delta_time) {
       one_way_probability = init_one_way_probability;
       walls_next_target_timeout = init_walls_next_target_timeout;
       for (int type = 0; type < num_types; ++type) {
-        walls_target[type] = rand()%num_positions;
-        walls_next_target[type] = rand()%num_positions;
-        if (std::abs(walls_next_target[type] - walls_target[type]) > max_distance) {
-          walls_next_target[type] = (walls_target[type] - walls_next_target[type])/2;
-        }
+        walls_target[type] = walls_next_target[type] = rand()%num_positions;
       }
     }
     // Move player to initial position
@@ -218,7 +210,11 @@ void Game::generate_game_walls(float delta_time) {
     bool join = (rand()%100 < one_way_probability);
     // Only join if there is no one_path in process
     if (!one_path and join) {
-      int pos = rand()%num_positions;
+      int pos = 0;
+      for (int type = 0; type < num_types; ++type) {
+        pos += walls_last_target[type];
+      }
+      pos /= num_types;
       for (int type = 0; type < num_types; ++type) {
         walls_target[type] = pos;
       }
@@ -230,8 +226,18 @@ void Game::generate_game_walls(float delta_time) {
       walls_next_target[survive] = rand()%num_positions;
     }
     else {
+      // Limit next target by walls_max_dist
       for (int type = 0; type < num_types; ++type) {
         walls_next_target[type] = rand()%num_positions;
+        if (std::abs(walls_target[type]-walls_next_target[type] > walls_max_dist)) {
+          if (walls_target[type] > walls_next_target[type]) {
+            walls_next_target[type] = walls_target[type] - walls_max_dist;
+          }
+          else {
+            walls_next_target[type] = walls_target[type] + walls_max_dist;
+          }
+
+        }
       }
     }
   }
@@ -248,9 +254,9 @@ void Game::generate_game_walls(float delta_time) {
 
     //time left
     float time_left = walls_next_target_timer;
-    int num_walls_incoming = (SCREEN_WIDTH-last_x + speed*time_left)/walls_width;
+    //int num_walls_incoming = (SCREEN_WIDTH-last_x + speed*time_left)/walls_width;
     int target_ind = std::max(0, walls_target[type]);
-    float incr_height = (target_positions[target_ind] - last_y)/float(num_walls_incoming);
+    //float incr_height = (target_positions[target_ind] - last_y)/float(num_walls_incoming);
     while (last_x < SCREEN_WIDTH) {
       //int ind = walls_target[type];
       float factor = 1.0;
