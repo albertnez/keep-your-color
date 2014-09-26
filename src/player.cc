@@ -28,7 +28,7 @@ void Player::update(float delta_time) {
     else {
       if (std::abs(act_speed) < EPSILON) act_speed = first_move_speed;
     }
-    act_speed += acceleration * delta_time;
+    act_speed += ((acceleration < 0 ? -1 : 1)*speed*0.5f + acceleration) * delta_time;
     act_speed = std::min(speed, std::max(-speed, act_speed));
   }
   if ((input.key_down(input.Key::PLAYER_DOWN) and act_speed < -EPSILON) or 

@@ -42,17 +42,20 @@ private:
   const static float start_speed;
   const static float walls_width;
   const static float walls_min_height;
+  const static int walls_max_dist;
   const static int num_positions;
   const static float init_walls_next_target_timeout;
+  const static float min_walls_next_target_timeout;
+  const static int init_one_way_probability;
 
   // speed
   float speed;
   float target_speed;
   // Walls
-
   float walls_next_target_timeout;
   float walls_next_target_timer;
   int max_distance;
+  int one_way_probability;
   std::vector<int> walls_target;
   std::vector<int> walls_next_target;
   std::vector<int> walls_last_target;
