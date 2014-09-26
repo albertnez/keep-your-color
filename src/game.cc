@@ -10,7 +10,7 @@ const float Game::ready_speed = 1000.0f;
 const float Game::start_speed = 300.0f;
 const float Game::walls_width = 4.0f;
 const float Game::walls_min_height = 180.0f; 
-const int Game::walls_max_dist = 0;
+const int Game::walls_max_dist = 3;
 const int Game::num_positions = 8;
 const float Game::init_walls_next_target_timeout = 2.0f;
 const int Game::init_one_way_probability = 20;
@@ -209,7 +209,8 @@ void Game::generate_game_walls(float delta_time) {
     for (int type = 0; type < num_types; ++type) {
       walls_last_target[type] = walls_target[type];
       walls_target[type] = walls_next_target[type];
-      if (walls_target[type] < 0) one_path = true;
+      walls_next_target[type] = rand()%num_positions;
+      if (walls_last_target[type] < 0 or walls_target[type] < 0) one_path = true;
     }
 
     // Join now to make next target only one path
@@ -236,14 +237,12 @@ void Game::generate_game_walls(float delta_time) {
       if (walls_next_target[type] >= 0) {
         walls_next_target[type] = rand()%num_positions;
         if (std::abs(std::abs(walls_target[type])-walls_next_target[type] > walls_max_dist)) {
-          std::cout << "before: " << walls_target[type] << " " << walls_next_target[type] << std::endl;
           if (std::abs(walls_target[type]) > walls_next_target[type]) {
             walls_next_target[type] = std::abs(walls_target[type]) - walls_max_dist;
           }
           else {
             walls_next_target[type] = std::abs(walls_target[type]) + walls_max_dist;
           }
-          std::cout << "now: " << walls_target[type] << " " << walls_next_target[type] << std::endl;
         }
       }
     }
