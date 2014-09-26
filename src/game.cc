@@ -13,6 +13,7 @@ const float Game::walls_min_height = 180.0f;
 const int Game::walls_max_dist = 3;
 const int Game::num_positions = 8;
 const float Game::init_walls_next_target_timeout = 2.0f;
+const float Game::min_walls_next_target_timeout = 0.5f;
 const int Game::init_one_way_probability = 20;
 
 Game::Game(int width, int height, std::string title, int style)
@@ -201,7 +202,7 @@ void Game::generate_game_walls(float delta_time) {
   if (walls_next_target_timer < 0) {
     // Increase difficulty
     walls_next_target_timer = walls_next_target_timeout;
-    walls_next_target_timeout = std::max(0.5f, walls_next_target_timeout*0.95f);
+    walls_next_target_timeout = std::max(min_walls_next_target_timeout, walls_next_target_timeout*0.95f);
     one_way_probability = std::min(100, one_way_probability+2);
 
     // Update target and check if now there is only one path

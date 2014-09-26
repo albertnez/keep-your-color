@@ -45,6 +45,7 @@ private:
   const static int walls_max_dist;
   const static int num_positions;
   const static float init_walls_next_target_timeout;
+  const static float min_walls_next_target_timeout;
   const static int init_one_way_probability;
 
   // speed
