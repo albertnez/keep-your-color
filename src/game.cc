@@ -62,6 +62,9 @@ bool Game::init() {
   Actor::colors = {sf::Color::Red, sf::Color::Blue}; 
   player = (new Player(*this, 0, 1000.0f));
 
+  // Assign initial status update, which is menu_update
+  status_update = std::bind(&Game::menu_update, this, std::placeholders::_1);
+
   return true;
 }
 
@@ -87,13 +90,12 @@ const Input & Game::get_input() {
 }
 
 void Game::update(float delta_time) {
-  // Common update
   input.update();
   // Update speed to target
   speed += (target_speed - speed)*delta_time*10.0f;
-
   total_time += delta_time;
 
+  // Update existing walls
   for (std::list<Wall*> & walls : all_walls) {
     for (Wall * wall : walls) {
       wall->set_speed(speed);
@@ -101,66 +103,79 @@ void Game::update(float delta_time) {
     }
   }
 
-  // Walls
+  // Delete old walls
   erase_old_walls();
-  if (status == PLAYING) generate_game_walls(delta_time);
-  else if (status == MENU) generate_menu_walls();
-  else if (status == READY) generate_ready_walls();
-  else generate_walls();
+  // Update specific for current status
+  status_update(delta_time);
+}
 
-  // Playing update
-  if (status == PLAYING) { 
-    score += delta_time*100;
-    target_speed += delta_time*10.0f;
-    gui->set_score(score);
+void Game::menu_update(float delta_time) {
+  generate_menu_walls();
 
-    player->update(delta_time);
-    if (!player_inside()) {
-      status = GAME_OVER;
-      gui->set_status(status);
-      target_speed = game_over_speed;
-    } 
-  }
-  else if (status == MENU) {
-    gui->update();
-    if (input.key_pressed(input.Key::PLAYER_ACTION)) {
-        status = READY;
-        gui->set_status(status);
-        time_to_start = 3.0f;
-    }
-  }
-  else if (status == READY) {
-    if (player->get_type() != 0) player->set_type(0);
-    target_speed = ready_speed;
-    if (time_to_start < 2.5f) {
-      target_speed = start_speed;
-      one_way_probability = init_one_way_probability;
-      walls_next_target_timeout = init_walls_next_target_timeout;
-      for (int type = 0; type < num_types; ++type) {
-        walls_target[type] = walls_next_target[type] = rand()%num_positions;
-      }
-    }
-    // Move player to initial position
-    sf::Vector2f pos = player->get_pos();
-    sf::Vector2f size = player->get_size();
-    player->set_pos(sf::Vector2f(pos.x,
-                                 pos.y + ((SCREEN_HEIGHT/2.0f-size.y/2.0) - pos.y)*delta_time*2));
-
-    // Adjust speed
-    time_to_start -= delta_time;
-    gui->set_timeout(time_to_start+1);
-    if (time_to_start < 0.0f) {
-      status = PLAYING;
-      gui->set_status(status);
-    }
-  }
-  else if (status == GAME_OVER) {
-    score = 0;
-    if (input.key_pressed(input.Key::PLAYER_ACTION)) {
+  gui->update();
+  if (input.key_pressed(input.Key::PLAYER_ACTION)) {
       status = READY;
+      status_update = std::bind(&Game::ready_update, this, std::placeholders::_1);
       gui->set_status(status);
       time_to_start = 3.0f;
+  }
+}
+
+void Game::ready_update(float delta_time) {
+  generate_ready_walls();
+
+  if (player->get_type() != 0) player->set_type(0);
+  target_speed = ready_speed;
+  if (time_to_start < 2.5f) {
+    target_speed = start_speed;
+    one_way_probability = init_one_way_probability;
+    walls_next_target_timeout = init_walls_next_target_timeout;
+    for (int type = 0; type < num_types; ++type) {
+      walls_target[type] = walls_next_target[type] = rand()%num_positions;
     }
+  }
+
+  // Move player to initial position
+  sf::Vector2f pos = player->get_pos();
+  sf::Vector2f size = player->get_size();
+  player->set_pos(sf::Vector2f(pos.x,
+                               pos.y + ((SCREEN_HEIGHT/2.0f-size.y/2.0) - pos.y)*delta_time*2));
+
+  // Adjust speed
+  time_to_start -= delta_time;
+  gui->set_timeout(time_to_start+1);
+  if (time_to_start < 0.0f) {
+    status = PLAYING;
+    status_update = std::bind(&Game::playing_update, this, std::placeholders::_1);
+    gui->set_status(status);
+  }
+}
+
+void Game::playing_update(float delta_time) {
+  generate_game_walls(delta_time);
+
+  score += delta_time*100;
+  target_speed += delta_time*10.0f;
+  gui->set_score(score);
+
+  player->update(delta_time);
+  if (!player_inside()) {
+    status = GAME_OVER;
+    gui->set_status(status);
+    status_update = std::bind(&Game::game_over_update, this, std::placeholders::_1);
+    target_speed = game_over_speed;
+  } 
+}
+
+void Game::game_over_update(float delta_time) {
+  generate_walls();
+
+  score = 0;
+  if (input.key_pressed(input.Key::PLAYER_ACTION)) {
+    status = READY;
+    status_update = std::bind(&Game::ready_update, this, std::placeholders::_1);
+    gui->set_status(status);
+    time_to_start = 3.0f;
   }
 }
 

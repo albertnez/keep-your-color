@@ -19,6 +19,11 @@ public:
   enum Status { MENU, READY, PLAYING, GAME_OVER, S_SIZE };
 private:
   void update(float delta_time);
+  std::function<void(float)> status_update;
+  void menu_update(float delta_time);
+  void ready_update(float delta_time);
+  void playing_update(float delta_time);
+  void game_over_update(float delta_time);
   void process_events();
   void render();
   // Clear everything in game
