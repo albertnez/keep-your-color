@@ -62,6 +62,9 @@ bool Game::init() {
   Actor::colors = {sf::Color::Red, sf::Color::Blue}; 
   player = (new Player(*this, 0, 1000.0f));
 
+  // Assign initial status update, which is menu_update
+  status_update = std::bind(&Game::menu_update, this, std::placeholders::_1);
+
   return true;
 }
 
@@ -87,13 +90,12 @@ const Input & Game::get_input() {
 }
 
 void Game::update(float delta_time) {
-  // Common update
   input.update();
   // Update speed to target
   speed += (target_speed - speed)*delta_time*10.0f;
-
   total_time += delta_time;
 
+  // Update existing walls
   for (std::list<Wall*> & walls : all_walls) {
     for (Wall * wall : walls) {
       wall->set_speed(speed);
@@ -101,68 +103,83 @@ void Game::update(float delta_time) {
     }
   }
 
-  // Walls
+  // Delete old walls
   erase_old_walls();
-  if (status == PLAYING) generate_game_walls(delta_time);
-  else if (status == MENU) generate_menu_walls();
-  else if (status == READY) generate_ready_walls();
-  else generate_walls();
+  // Update specific for current status
+  status_update(delta_time);
+}
 
-  // Playing update
-  if (status == PLAYING) { 
-    score += delta_time*100;
-    target_speed += delta_time*10.0f;
-    gui->set_score(score);
+//** STATUS DEPENDENT UPDATE **
+void Game::menu_update(float delta_time) {
+  generate_menu_walls();
 
-    player->update(delta_time);
-    if (!player_inside()) {
-      status = GAME_OVER;
-      gui->set_status(status);
-      target_speed = game_over_speed;
-    } 
-  }
-  else if (status == MENU) {
-    gui->update();
-    if (input.key_pressed(input.Key::PLAYER_ACTION)) {
-        status = READY;
-        gui->set_status(status);
-        time_to_start = 3.0f;
-    }
-  }
-  else if (status == READY) {
-    if (player->get_type() != 0) player->set_type(0);
-    target_speed = ready_speed;
-    if (time_to_start < 2.5f) {
-      target_speed = start_speed;
-      one_way_probability = init_one_way_probability;
-      walls_next_target_timeout = init_walls_next_target_timeout;
-      for (int type = 0; type < num_types; ++type) {
-        walls_target[type] = walls_next_target[type] = rand()%num_positions;
-      }
-    }
-    // Move player to initial position
-    sf::Vector2f pos = player->get_pos();
-    sf::Vector2f size = player->get_size();
-    player->set_pos(sf::Vector2f(pos.x,
-                                 pos.y + ((SCREEN_HEIGHT/2.0f-size.y/2.0) - pos.y)*delta_time*2));
-
-    // Adjust speed
-    time_to_start -= delta_time;
-    gui->set_timeout(time_to_start+1);
-    if (time_to_start < 0.0f) {
-      status = PLAYING;
-      gui->set_status(status);
-    }
-  }
-  else if (status == GAME_OVER) {
-    score = 0;
-    if (input.key_pressed(input.Key::PLAYER_ACTION)) {
+  gui->update();
+  if (input.key_pressed(input.Key::PLAYER_ACTION)) {
       status = READY;
+      status_update = std::bind(&Game::ready_update, this, std::placeholders::_1);
       gui->set_status(status);
       time_to_start = 3.0f;
-    }
   }
 }
+
+void Game::ready_update(float delta_time) {
+  generate_ready_walls();
+
+  if (player->get_type() != 0) player->set_type(0);
+  target_speed = ready_speed;
+  if (time_to_start < 2.5f) {
+    target_speed = start_speed;
+    one_way_probability = init_one_way_probability;
+    walls_next_target_timeout = init_walls_next_target_timeout;
+    for (int type = 0; type < num_types; ++type) {
+      walls_target[type] = walls_next_target[type] = rand()%num_positions;
+    }
+  }
+
+  // Move player to initial position
+  sf::Vector2f pos = player->get_pos();
+  sf::Vector2f size = player->get_size();
+  player->set_pos(sf::Vector2f(pos.x,
+                               pos.y + ((SCREEN_HEIGHT/2.0f-size.y/2.0) - pos.y)*delta_time*2));
+
+  // Adjust speed
+  time_to_start -= delta_time;
+  gui->set_timeout(time_to_start+1);
+  if (time_to_start < 0.0f) {
+    status = PLAYING;
+    status_update = std::bind(&Game::playing_update, this, std::placeholders::_1);
+    gui->set_status(status);
+  }
+}
+
+void Game::playing_update(float delta_time) {
+  generate_game_walls(delta_time);
+
+  score += delta_time*100;
+  target_speed += delta_time*10.0f;
+  gui->set_score(score);
+
+  player->update(delta_time);
+  if (!player_inside()) {
+    status = GAME_OVER;
+    gui->set_status(status);
+    status_update = std::bind(&Game::game_over_update, this, std::placeholders::_1);
+    target_speed = game_over_speed;
+  } 
+}
+
+void Game::game_over_update(float delta_time) {
+  generate_walls();
+
+  score = 0;
+  if (input.key_pressed(input.Key::PLAYER_ACTION)) {
+    status = READY;
+    status_update = std::bind(&Game::ready_update, this, std::placeholders::_1);
+    gui->set_status(status);
+    time_to_start = 3.0f;
+  }
+}
+//** END STATUS DEPENDENT UPDATE
 
 void Game::process_events() {
   sf::Event event;
@@ -261,19 +278,14 @@ void Game::generate_game_walls(float delta_time) {
 
     //time left
     float time_left = walls_next_target_timer;
-    //int num_walls_incoming = (SCREEN_WIDTH-last_x + speed*time_left)/walls_width;
-    //int target_ind = std::max(0, walls_target[type]);
     int target_ind = std::abs(walls_target[type]);  // Abs to send closed paths to its position
-    //float incr_height = (target_positions[target_ind] - last_y)/float(num_walls_incoming);
+
     while (last_x < SCREEN_WIDTH) {
-      //int ind = walls_target[type];
       float factor = 1.0;
       factor = std::max(1.0f, 3.0f*(1-time_left));
       float new_y = last_y + (target_positions[target_ind] - last_y)*delta_time*factor;
-      //float new_y = last_y + incr_height;  // Straight lines
-
       float new_height = last_height + (walls_min_height - last_height)*delta_time;
-      //float new_height = last_height + (walls_target[type] - walls_last_target[type])*delta_time;
+
       if (walls_target[type] < 0) new_height = last_height + (0.0f - last_height)*delta_time;
       walls.push_back(new Wall(*this, type, speed,
                                sf::Vector2f(last_x, new_y),
@@ -352,8 +364,8 @@ void Game::generate_walls() {
         float new_y = last_y + (rand()%int(walls_width))*(rand()&1 ? -1:1);
         float new_height = last_height + (rand()%int(walls_width))*(rand()&1 ? -1:1);
         new_height = std::max(walls_min_height, std::min(SCREEN_HEIGHT - new_y, new_height));
-        new_height = std::min(new_height, last_height + walls_width/2.0f);
         // limit new height
+        new_height = std::min(new_height, last_height + walls_width/2.0f);
         // limit new y
         new_y = std::max(0.0f, std::min(SCREEN_HEIGHT - new_height, new_y));
         walls.push_back(new Wall(*this, type, speed,
@@ -374,7 +386,6 @@ void Game::generate_walls() {
 }
 
 void Game::erase_old_walls() {
-  //for (std::list<Wall*> walls : all_walls) {
   for (int type = 0; type < num_types; ++type) {
     std::list<Wall*> & walls = all_walls[type];
     bool move_next = true;
