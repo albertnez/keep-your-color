@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <functional>
 #include "utils.h"
 #include "input.h"
 #include "actor.h"
