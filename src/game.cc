@@ -1,23 +1,24 @@
 #include "game.h"
+#include "wall.h"
 #include "utils.h"
 #include "player.h"
-#include "wall.h"
 #include <iostream>
 
 const int Game::num_types = 2;
-const float Game::game_over_speed = 200.0f;
-const float Game::ready_speed = 1000.0f;
-const float Game::start_speed = 300.0f;
-const float Game::walls_width = 4.0f;
-const float Game::walls_min_height = 180.0f; 
-const int Game::walls_max_dist = 3;
 const int Game::num_positions = 8;
-const float Game::init_walls_next_target_timeout = 2.0f;
-const float Game::min_walls_next_target_timeout = 0.5f;
+const int Game::walls_max_dist = 3;
+const float Game::walls_width = 4.0f;
+const float Game::start_speed = 300.0f;
+const float Game::ready_speed = 1000.0f;
+const float Game::game_over_speed = 200.0f;
+const float Game::walls_min_height = 180.0f; 
 const int Game::init_one_way_probability = 20;
+const float Game::min_walls_next_target_timeout = 0.5f;
+const float Game::init_walls_next_target_timeout = 2.0f;
 
 Game::Game(int width, int height, std::string title, int style)
   : window(sf::VideoMode(width, height), title, style) {
+  
   window.setMouseCursorVisible(false);
   window.setVerticalSyncEnabled(true);
 
@@ -28,9 +29,9 @@ Game::Game(int width, int height, std::string title, int style)
 
   one_way_probability = init_one_way_probability;
   status = MENU;
-  time_to_start = 0;
   score = 0;
   total_time = 0;
+  time_to_start = 0;
 }
 
 Game::~Game() {
@@ -39,17 +40,18 @@ Game::~Game() {
 
 bool Game::init() {
   if (!gui->init()) return false;
-  target_speed = start_speed;
-  speed = start_speed;
+  speed = target_speed = start_speed;
 
   all_walls = std::vector<std::list<Wall*>>(num_types);
 
   walls_next_target_timeout = init_walls_next_target_timeout;
   walls_next_target_timer = walls_next_target_timeout;
   walls_last_target = walls_target = walls_next_target = std::vector<int>(num_types);
+  
   for (int type = 0; type < num_types; ++type) {
     walls_target[type] = walls_next_target[type] =  rand()%num_positions;
   }
+  
   target_positions = std::vector<float> { 0.0f, 
                                           50.0f, 
                                           100.0f,
@@ -58,7 +60,7 @@ bool Game::init() {
                                           250.0f,
                                           300.0f,
                                           350.0f };
-
+                                          
   Actor::colors = {sf::Color::Red, sf::Color::Blue}; 
   player = (new Player(*this, 0, 1000.0f));
 
@@ -69,8 +71,8 @@ bool Game::init() {
 }
 
 void Game::run() {
-  sf::Clock clock;
   srand(time(0));
+  sf::Clock clock;
   while (window.isOpen()) {
     float delta_time = clock.restart().asSeconds();
     process_events();
@@ -170,7 +172,6 @@ void Game::playing_update(float delta_time) {
 
 void Game::game_over_update(float delta_time) {
   generate_walls();
-
   score = 0;
   if (input.key_pressed(input.Key::PLAYER_ACTION)) {
     status = READY;
@@ -249,6 +250,7 @@ void Game::generate_game_walls(float delta_time) {
       int survive = rand()%num_types;
       walls_next_target[survive] = rand()%num_positions;
     }
+    
     // Limit next target by walls_max_dist
     for (int type = 0; type < num_types; ++type) {
       // Check the distance even if there is a negative target
@@ -265,6 +267,7 @@ void Game::generate_game_walls(float delta_time) {
       }
     }
   }
+  
   for (int type = 0; type < num_types; ++type) {
     std::list<Wall*> & walls = all_walls[type];
     if (walls.empty()) {
@@ -281,8 +284,7 @@ void Game::generate_game_walls(float delta_time) {
     int target_ind = std::abs(walls_target[type]);  // Abs to send closed paths to its position
 
     while (last_x < SCREEN_WIDTH) {
-      float factor = 1.0;
-      factor = std::max(1.0f, 3.0f*(1-time_left));
+      float factor = std::max(1.0f, 3.0f*(1-time_left));
       float new_y = last_y + (target_positions[target_ind] - last_y)*delta_time*factor;
       float new_height = last_height + (walls_min_height - last_height)*delta_time;
 
@@ -328,9 +330,9 @@ void Game::generate_ready_walls() {
 }
 
 void Game::generate_menu_walls() {
-  float y_offset = 100.0f;
-  float sin_diff = 30.0f;
   float size = 100.0f;
+  float sin_diff = 30.0f;
+  float y_offset = 100.0f;
   for (int type = 0; type < num_types; ++type) {
     std::list<Wall*> & walls = all_walls[type];
     float diff = sin_diff * sin(total_time * (1.337f * (type+1)));
@@ -357,9 +359,9 @@ void Game::generate_walls() {
   for (int type = 0; type < num_types; ++type) {
     std::list<Wall*> & walls = all_walls[type];
     if (!walls.empty()) {
-      float last_x = walls.back()->get_pos().x + walls_width;
       float last_y = walls.back()->get_pos().y;
       float last_height = walls.back()->get_size().y;
+      float last_x = walls.back()->get_pos().x + walls_width;
       while (last_x < SCREEN_WIDTH) {
         float new_y = last_y + (rand()%int(walls_width))*(rand()&1 ? -1:1);
         float new_height = last_height + (rand()%int(walls_width))*(rand()&1 ? -1:1);
